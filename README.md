@@ -10,6 +10,7 @@ generación de código para una máquina de pila simulada.
 - Miguel Ángel Rodríguez Candelario
 - Iván López García
 - Aldo Manuel Díaz Pineda
+- Zareth Samai Santiago Acosta
 
 ## Estructura
 
