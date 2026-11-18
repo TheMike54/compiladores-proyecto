@@ -1,0 +1,7 @@
+// Tres errores sintácticos: falta ';', falta ')' y una expresión incompleta
+int a = 3
+int b = 4;
+if (a < b {
+    print(a);
+}
+print(a + );
