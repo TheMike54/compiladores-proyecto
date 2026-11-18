@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+build/
+CLAUDE.md
+CLAUDE.local.md
+.claude/settings.local.json

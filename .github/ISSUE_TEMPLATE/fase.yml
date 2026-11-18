@@ -1,0 +1,35 @@
+name: Fase o tarea
+description: Trabajo nuevo con un criterio de aceptación comprobable
+title: "feat: "
+body:
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Objetivo
+      description: Qué parte del compilador se construye y para qué sirve
+    validations:
+      required: true
+  - type: textarea
+    id: alcance
+    attributes:
+      label: Alcance
+      description: Qué entra y qué no entra en esta tarea
+    validations:
+      required: true
+  - type: textarea
+    id: entradas-salidas
+    attributes:
+      label: Entrada y salida
+      description: Qué recibe esta fase de la anterior y qué entrega a la siguiente
+  - type: textarea
+    id: aceptacion
+    attributes:
+      label: Criterio de aceptación
+      description: Dado [estado inicial], cuando [acción], entonces [resultado observable]
+    validations:
+      required: true
+  - type: input
+    id: fecha
+    attributes:
+      label: Fecha límite
+      placeholder: "26-nov-2026"
