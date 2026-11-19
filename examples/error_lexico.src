@@ -1,0 +1,4 @@
+// Tres errores léxicos: '@', '&' solo y un entero con cero inicial
+int a = 3 @ 4;
+bool b = true & false;
+int c = 007;

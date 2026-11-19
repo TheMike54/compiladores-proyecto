@@ -1,0 +1,8 @@
+// Factorial iterativo de 5: imprime 120
+int n = 5;
+int resultado = 1;
+while (n > 1) {
+    resultado = resultado * n;
+    n = n - 1;
+}
+print(resultado);

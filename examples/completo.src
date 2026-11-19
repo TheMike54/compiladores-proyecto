@@ -1,0 +1,40 @@
+/* Usa todas las construcciones del lenguaje.
+   Salida esperada: 1 0 1 1 2 3 5 8 13 21 34, luego 55, true y 3 */
+
+func fibonacci(int n): int {
+    if (n < 2) {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+func es_par(int x): bool {
+    return x % 2 == 0;
+}
+
+func mostrar_serie(int limite) {
+    int i = 0;
+    while (i < limite) {
+        print(fibonacci(i));
+        i = i + 1;
+    }
+}
+
+mostrar_serie(11);
+
+int total = fibonacci(10);
+bool par = es_par(total);
+print(total);
+
+if (!par && total > 50 || false) {
+    print(true);
+} else if (par) {
+    print(false);
+} else {
+    print(0);
+}
+
+{
+    int resta = 10 - 3 - 4;   // asocia a la izquierda: (10 - 3) - 4 = 3
+    print(resta);
+}
