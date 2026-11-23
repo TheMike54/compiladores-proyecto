@@ -1,0 +1,9 @@
+/* Tres errores semánticos distintos; el análisis los reporta todos. */
+int total = 0;
+bool listo = false;
+
+contador = 1;           // variable no declarada
+total = total + listo;  // operador '+' con un bool
+if (total) {            // la condición no es bool
+    print(total);
+}
