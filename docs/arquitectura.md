@@ -39,7 +39,8 @@ Reglas comunes:
   por un error del programa: los junta en una lista y sigue.
 - Cada fase devuelve una tupla `(resultado, errores)` si puede fallar (léxico, sintáctico, semántico, máquina).
 - `src/main.py` corre las fases en orden y se detiene después de la primera que tenga errores.
-- Ninguna fase modifica la entrada de otra salvo el semántico, que solo llena el campo `tipo` de las expresiones.
+- Ninguna fase modifica la entrada de otra salvo el semántico, que solo llena el campo `tipo` de las expresiones
+  y el campo `nombre_unico` (sección 4).
 
 ## 2. Tokens
 
@@ -94,37 +95,46 @@ caminos, usar un procedimiento como valor.
 ## 5. Código intermedio de tres direcciones (Aldo)
 
 Definido en `src/ir/instrucciones.py`: `Instruccion(op, destino, arg1, arg2, etiqueta, params)`. Un operando es un
-`str` (variable o temporal) o una constante `int`/`bool`. Temporales: `t1`, `t2`, … Etiquetas: `L1`, `L2`, …
+`str` (variable o temporal) o una constante `int`/`bool`. Temporales: `@t1`, `@t2`, … Etiquetas: `@L1`, `@L2`, …
+
+**Nombres internos:** los temporales y las etiquetas que crea el compilador, incluida `@main`, empiezan con `@`. Ese
+carácter no puede aparecer en un identificador del lenguaje, así que nunca chocan con una variable o una función del
+programa, aunque se llame `t1`, `L1` o `main`. Las variables y funciones del programa conservan su nombre (o su
+`nombre_unico`) sin `@`.
 
 | `op` | Forma en texto | Significado |
 |---|---|---|
-| `add sub mul div mod` | `t1 = a + b` | aritmética entera |
-| `eq ne lt le gt ge` | `t1 = a < b` | comparación, resultado `bool` |
-| `and or` | `t1 = a && b` | lógica |
-| `neg not` | `t1 = -a`, `t1 = !a` | unarios |
-| `copy` | `x = t1` | copia |
-| `label` | `L1:` | marca |
-| `goto` | `goto L1` | salto incondicional |
-| `if_false` | `if_false t1 goto L2` | salta si es falso |
-| `param` | `param t1` | argumento, en orden de izquierda a derecha |
-| `call` | `t2 = call f, 2` | llama a `f` con los últimos 2 `param`; sin destino si es procedimiento |
-| `return` | `return t1` / `return` | |
-| `print` | `print t1` | |
+| `add sub mul div mod` | `@t1 = a + b` | aritmética entera |
+| `eq ne lt le gt ge` | `@t1 = a < b` | comparación, resultado `bool` |
+| `and or` | `@t1 = a && b` | lógica |
+| `neg not` | `@t1 = -a`, `@t1 = !a` | unarios |
+| `copy` | `x = @t1` | copia |
+| `label` | `@L1:` | marca |
+| `goto` | `goto @L1` | salto incondicional |
+| `if_false` | `if_false @t1 goto @L2` | salta si es falso |
+| `param` | `param @t1` | argumento, en orden de izquierda a derecha |
+| `call` | `@t2 = call f, 2` | llama a `f` con los últimos 2 `param`; sin destino si es procedimiento |
+| `return` | `return @t1` / `return` | |
+| `print` | `print @t1` | |
 | `func` / `endfunc` | `func suma(a, b)` … `endfunc suma` | límites de una función |
 
-**Orden del programa:** primero todas las funciones (cada una entre `func` y `endfunc`), luego la etiqueta `main:` y
+**Orden del programa:** primero todas las funciones (cada una entre `func` y `endfunc`), luego la etiqueta `@main:` y
 las sentencias globales, y al final un `return` sin valor.
+
+**Declaración sin valor inicial:** `int x;` se traduce como `x = 0` y `bool b;` como `b = false` (el valor inicial de
+la especificación del lenguaje, sección 2), según el `tipo_dato` de `DeclVar`. Así toda variable tiene valor desde
+que se ejecuta su declaración.
 
 Traducción esperada (ejemplo):
 
 ```
-while (i < n) { i = i + 1; }        L1:
-                                         t1 = i < n
-                                         if_false t1 goto L2
-                                         t2 = i + 1
-                                         i = t2
-                                         goto L1
-                                    L2:
+while (i < n) { i = i + 1; }        @L1:
+                                         @t1 = i < n
+                                         if_false @t1 goto @L2
+                                         @t2 = i + 1
+                                         i = @t2
+                                         goto @L1
+                                    @L2:
 ```
 
 `listado(instrucciones)` imprime la lista en este formato (artefacto obligatorio, antes y después de optimizar).
@@ -137,7 +147,7 @@ operandos**, una **pila de marcos** (cada llamada crea un marco con sus variable
 | Instrucción | Efecto en la pila |
 |---|---|
 | `PUSH c` | apila la constante `c` (`5`, `true`, `false`) |
-| `LOAD x` | apila el valor de la variable `x` (local si existe en el marco actual, si no global) |
+| `LOAD x` | apila el valor de la variable `x` (local si existe en el marco actual, si no global); si no existe en ninguno, es error de ejecución |
 | `STORE x` | desapila y guarda en `x` |
 | `ADD SUB MUL DIV MOD` | desapila `b`, desapila `a`, apila `a op b` |
 | `EQ NE LT LE GT GE` | igual, resultado `true`/`false` |
@@ -152,8 +162,11 @@ operandos**, una **pila de marcos** (cada llamada crea un marco con sus variable
 | `PRINT` | desapila e imprime (`true`/`false` para booleanos) |
 | `HALT` | termina |
 
-La ejecución empieza en `LABEL main`. Errores en tiempo de ejecución (fase `"ejecución"`): división o módulo entre
-cero, y desbordamiento de la pila de llamadas (más de 1000 marcos). La línea y columna de estos errores son las de la
+La ejecución empieza en `LABEL @main`. Errores en tiempo de ejecución (fase `"ejecución"`): división o módulo entre
+cero, desbordamiento de la pila de llamadas (más de 1000 marcos) y `LOAD` de una variable que todavía no tiene valor
+(`la variable 'g' se usó antes de tener valor`). Este último pasa cuando una función lee una variable global cuya
+declaración aún no se ejecuta: en `int a = f(); int g = 5;`, con `f` regresando `g`, el semántico acepta el programa
+porque `g` está declarada antes de `f` en el texto, pero al llamar a `f` todavía no tiene valor. La línea y columna de estos errores son las de la
 instrucción del programa fuente si se conocen; si no, `0`.
 
 ## 7. Comando único
