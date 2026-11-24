@@ -55,4 +55,7 @@ def _reportar(errores) -> int:
 
 
 if __name__ == "__main__":
+    # En Windows, al redirigir la salida a un archivo Python usa cp1252, que no tiene los caracteres del árbol.
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     sys.exit(main())
