@@ -78,6 +78,17 @@ class TestAlcance(CasoSemantico):
         # La repetida se revisa con su propio tipo de retorno: no debe salir además un S12.
         self.invalido("func f() { }\nfunc f(): int { return 1; }", "S02", linea=2)
 
+    def test_s02_variable_global_antes_que_funcion_del_mismo_nombre(self):
+        # El error va en la segunda declaración del archivo (la función) y cita la primera.
+        error = self.invalido("int f = 1;\nfunc f(): int { return 1; }", "S02", linea=2)
+        self.assertEqual(error.columna, 1)
+        self.assertIn("línea 1", error.mensaje)
+
+    def test_s02_variable_y_funcion_en_la_misma_linea(self):
+        error = self.invalido("int f; func f() { }", "S02", linea=1)
+        self.assertEqual(error.columna, 8)  # columna donde empieza 'func'
+        self.assertIn("línea 1", error.mensaje)
+
 
 class TestFunciones(CasoSemantico):
     def test_s03_funcion_declarada_incluso_despues_de_usarla(self):

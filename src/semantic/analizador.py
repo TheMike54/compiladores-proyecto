@@ -81,10 +81,17 @@ class Analizador(Visitor):
 
     def _declarar(self, simbolo: Simbolo, nodo: Nodo) -> bool:
         previo = self.tabla.declarar(simbolo)
-        if previo is not None:
+        if previo is None:
+            return True
+        if (previo.linea, previo.columna) > (nodo.linea, nodo.columna):
+            # Las funciones se registran antes que el resto, así que el símbolo previo puede venir
+            # después en el archivo. El error va en la segunda declaración del archivo (la previa)
+            # y cita la primera (este nodo).
+            mensaje = f"'{simbolo.nombre}' ya está declarado en este ámbito (línea {nodo.linea})"
+            self.errores.append(ErrorSemantico("semántico", mensaje, previo.linea, previo.columna, "S02"))
+        else:
             self._error("S02", nodo, f"'{simbolo.nombre}' ya está declarado en este ámbito (línea {previo.linea})")
-            return False
-        return True
+        return False
 
     def _nombre_unico(self, nombre: str) -> str:
         """El nombre tal cual la primera vez; después x_1, x_2, ... sin chocar con nombres del fuente."""
