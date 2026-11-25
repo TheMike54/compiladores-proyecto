@@ -2,9 +2,10 @@
 el optimizador y el backend). La explicación completa está en docs/arquitectura.md.
 
 Un operando es:
-- `str`: nombre de una variable del programa o de un temporal (`t1`, `t2`, ...);
+- `str`: nombre de una variable del programa o de un temporal (`@t1`, `@t2`, ...);
 - `int` o `bool`: una constante.
-Las etiquetas son `str` (`L1`, `L2`, ...) y viven en el campo `etiqueta`.
+Las etiquetas son `str` (`@L1`, `@L2`, ..., y `@main`) y viven en el campo `etiqueta`. Los nombres internos
+empiezan con `@` para no chocar con los del programa.
 """
 
 from dataclasses import dataclass
