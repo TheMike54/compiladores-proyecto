@@ -97,7 +97,9 @@ el programa principal y se ejecutan en orden; sus variables son globales.
 - Cada función abre un ámbito con sus parámetros; cada bloque `{ }` abre uno nuevo.
 - Un nombre se busca del ámbito más interno al global. Declarar dos veces el mismo nombre en el mismo ámbito es
   error; en un ámbito interno puede ocultar a uno externo.
-- Una variable se usa solo después de su declaración.
+- Una variable se usa solo después de su declaración. Esto incluye a las funciones: una función solo ve las
+  variables globales declaradas antes de ella en el texto (a diferencia de las funciones, que se pueden llamar
+  antes de declararse).
 
 ## 8. Errores
 
