@@ -92,6 +92,61 @@ número o tipo de argumentos incorrecto, tipos incompatibles en asignación, dec
 que no es `bool`, `return` con tipo incorrecto o fuera de función, función con retorno sin `return` en todos los
 caminos, usar un procedimiento como valor.
 
+### 4.1 Interfaz
+
+`src.semantic.analizar(programa) -> (TablaSimbolos, list[ErrorCompilacion])`. El `Programa` se anota en su lugar
+(campos `tipo` y `nombre_unico`), por eso no se regresa. Para probar la fase sola sobre un archivo:
+`python -m src.semantic <archivo.src> [--ast]`, que imprime la tabla (y el AST con tipos) o los errores.
+
+- `TablaSimbolos`: `abrir(nombre)`, `cerrar()`, `declarar(simbolo)` (regresa el símbolo previo si es redeclaración),
+  `buscar(nombre)` (del ámbito actual al global), `ambitos()` y `texto()`. Los ámbitos cerrados se conservan para
+  poder imprimir la tabla completa al final.
+- `Simbolo(nombre, categoria, tipo, linea, columna, tipos_parametros, nombre_unico, ambito)`. En una función, `tipo`
+  es el tipo de retorno (`None` = procedimiento) y `tipos_parametros` la lista de tipos de sus parámetros.
+- Cada error es un `ErrorSemantico`, subclase de `ErrorCompilacion` con el campo extra `codigo` del catálogo.
+
+### 4.2 Reglas de alcance
+
+- Primero se registran todas las funciones en el ámbito global; después se recorre el programa en orden. Por eso una
+  función se puede llamar antes de su declaración, pero una variable global solo después de la suya.
+- El cuerpo de una función comparte ámbito con sus parámetros: `func f(int a) { int a; }` es redeclaración. Un bloque
+  dentro del cuerpo sí puede ocultar un parámetro.
+- El valor inicial se revisa antes de declarar la variable: en `int x = x + 1;` la `x` de la derecha es otra (una
+  externa) o un error.
+- `nombre_unico`: la primera variable o parámetro con un nombre lo conserva (`nombre_unico = None`); cada declaración
+  posterior con el mismo nombre, en cualquier ámbito, recibe `x_1`, `x_2`, …, saltando los nombres que ya existan en
+  el programa. Así cada variable del IR es distinta aunque la máquina busque primero en el marco y luego en globales.
+- La llamada a un procedimiento usada como sentencia (`SentenciaExpr`) queda con `tipo = None`; toda otra expresión
+  de un programa sin errores tiene `tipo`.
+
+### 4.3 Catálogo de errores semánticos
+
+Todos son de fase `"semántico"` y se imprimen como `Error semántico [línea L, columna C]: mensaje`. El análisis no se
+detiene en el primero: junta todos y los entrega ordenados por línea y columna. Una expresión con error queda sin tipo
+y las que la contienen no reportan otro error por ella (un error del programa = un mensaje).
+
+| Código | Error | Posición | Ejemplo de mensaje |
+|---|---|---|---|
+| S01 | Variable no declarada (o usada fuera de su ámbito, o antes de declararse) | el identificador | `la variable 'y' no está declarada` |
+| S02 | Redeclaración en el mismo ámbito (variable, parámetro o función) | la segunda declaración | `'x' ya está declarado en este ámbito (línea 1)` |
+| S03 | Función no declarada | la llamada | `la función 'triple' no está declarada` |
+| S04 | Número de argumentos incorrecto | la llamada | `'f' espera 2 argumento(s) y recibió 1` |
+| S05 | Tipo de argumento incorrecto | el argumento | `el argumento 2 de 'f' debe ser bool y es int` |
+| S06 | Tipos incompatibles en asignación | el valor | `no se puede asignar un valor bool a 'x', que es int` |
+| S07 | Tipos incompatibles en declaración | el valor inicial | `'b' es bool y se inicializa con un valor int` |
+| S08 | Operador con operandos de tipo incorrecto | el operador | `el operador '+' necesita int y int, y recibió int y bool` |
+| S09 | Condición de `if` o `while` que no es `bool` | la condición | `la condición del 'if' debe ser bool y es int` |
+| S10 | `return` fuera de una función | el `return` | `'return' fuera de una función` |
+| S11 | `return` con valor de tipo incorrecto | el valor | `'f' debe regresar bool y regresa int` |
+| S12 | `return` sin valor en una función, o con valor en un procedimiento | el `return` | `'f' debe regresar un valor int` |
+| S13 | Función con tipo de retorno que no regresa en todos los caminos | la función | `la función 'f' no regresa un valor en todos los caminos` |
+| S14 | Procedimiento usado como valor (en una expresión o en `print`) | la llamada | `'p' es un procedimiento: no regresa un valor que se pueda usar` |
+| S15 | Función usada como variable | el identificador | `'f' es una función, no una variable` |
+| S16 | Variable llamada como función | la llamada | `'x' es una variable, no una función` |
+
+Para S13, un `return` cuenta si está directo en el cuerpo o en un bloque, o si es un `if` con `else` en el que las dos
+ramas regresan. Un `while` nunca cuenta, porque su condición puede ser falsa desde el inicio.
+
 ## 5. Código intermedio de tres direcciones (Aldo)
 
 Definido en `src/ir/instrucciones.py`: `Instruccion(op, destino, arg1, arg2, etiqueta, params)`. Un operando es un
