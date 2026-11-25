@@ -10,6 +10,7 @@ generación de código para una máquina de pila simulada.
 - Miguel Ángel Rodríguez Candelario
 - Iván López García
 - Aldo Manuel Díaz Pineda
+- Zareth Samai Santiago Acosta
 
 ## Estructura
 
@@ -22,6 +23,33 @@ examples/    programas de ejemplo
 
 ## Requisitos
 - Python 3.12 o superior, sin dependencias externas.
+
+## Instalación y ejecución
+
+Desde PowerShell, clona el repositorio y entra en su carpeta. Python 3.12 o
+superior es el único requisito.
+
+```powershell
+git clone https://github.com/TheMike54/compiladores-proyecto.git
+cd compiladores-proyecto
+python -m src.main examples/factorial.src
+```
+
+El ejemplo imprime `120` y guarda las instrucciones de pila en
+`build/factorial.pila`. Otro ejemplo, `python -m src.main examples/completo.src`,
+imprime los primeros once números de Fibonacci y termina con `55`, `true` y `3`,
+cada valor en su propia línea.
+
+Para ver todas las etapas junto con la salida del programa:
+
+```powershell
+python -m src.main examples/factorial.src --todo
+```
+
+Puedes ver etapas individuales con `--tokens`, `--ast`, `--simbolos`, `--ir`,
+`--ir-opt` o `--objetivo`. El comando devuelve `0` al terminar correctamente,
+`1` si falla una fase y `2` si el archivo fuente no se puede leer.
+
 
 ## Pruebas
 
