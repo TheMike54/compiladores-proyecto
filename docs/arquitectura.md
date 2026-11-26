@@ -194,6 +194,216 @@ while (i < n) { i = i + 1; }        @L1:
 
 `listado(instrucciones)` imprime la lista en este formato (artefacto obligatorio, antes y después de optimizar).
 
+### 5.1 Optimizador
+
+`src.optimizer.optimizar(instrucciones)` recibe la lista del IR y devuelve una lista nueva, sin modificar la de
+entrada. La nueva hace lo mismo que la original: imprime lo mismo, en el mismo orden, y falla en los mismos casos
+(por ejemplo, al dividir entre cero). Solo cambia cómo lo logra: con menos instrucciones.
+
+Trabaja en dos pasadas, en este orden:
+
+1. `propagar_y_plegar` recorre la lista una vez y aplica la propagación de copias y el plegado de constantes.
+2. `quitar_temporales_muertos` borra los temporales que la primera pasada dejó sin uso, y se repite hasta que ya no
+   cambia nada.
+
+El orden importa: la primera pasada es la que deja instrucciones inútiles, y la segunda las limpia.
+
+**Bloques básicos.** Un bloque básico es un tramo de instrucciones que se ejecuta siempre de principio a fin: no se
+puede entrar por la mitad ni salir antes. Lo que el optimizador sabe de las variables (por ejemplo, que `limite` vale
+5) solo es seguro dentro de un bloque, porque ahí no hay otro camino que llegue con un valor distinto. Por eso olvida
+todo lo aprendido al pasar por alguna de estas instrucciones:
+
+| Instrucción | Por qué se olvida lo aprendido |
+|---|---|
+| `label` | a una etiqueta pueden llegar saltos desde otros puntos del programa, con otros valores |
+| `goto`, `if_false` | después de un salto empieza otro camino |
+| `return`, `func`, `endfunc` | terminan o empiezan una función |
+| `call` | la función llamada puede cambiar variables globales |
+
+Olvidar de más solo hace que se pierda alguna optimización; nunca cambia el resultado del programa. Por eso el
+optimizador prefiere olvidar cuando tiene duda.
+
+**Plegado de constantes.** Si una instrucción aritmética, de comparación o lógica tiene todos sus operandos
+constantes, su resultado ya se conoce sin ejecutar el programa, y se reemplaza por una copia de ese valor. Con
+`int x = 2 + 3 * 4; print(x);`:
+
+```
+IR                          IR optimizado
+@main:                      @main:
+    @t1 = 3 * 4                 x = 14
+    @t2 = 2 + @t1               print 14
+    x = @t2                     return
+    print x
+    return
+```
+
+`@t1 = 3 * 4` se pliega a `@t1 = 12`; la propagación de copias sustituye `@t1` en la instrucción siguiente, que queda
+`@t2 = 2 + 12` y se pliega a `@t2 = 14`, y así hasta `print 14`. Los temporales `@t1` y `@t2` quedan sin uso y los
+borra la segunda pasada. `x = 14` se conserva porque `x` es una variable del programa y el optimizador nunca las
+borra.
+
+Una operación entre constantes siempre da el mismo resultado, y por eso calcularla antes no cambia lo que imprime el
+programa. Hay tres casos en los que el resultado de ejecutar no es simplemente el valor aritmético, y en ellos el
+plegado tiene cuidado:
+
+- **División o módulo entre cero.** No se pliega. `print(1 / 0);` queda igual después de optimizar, y el programa sigue
+  terminando con el error de ejecución `división entre cero`, que la especificación define como error en tiempo de
+  ejecución. El optimizador no debe inventar un valor para esa operación ni hacer que el error ocurra al compilar.
+- **Resultado fuera de 32 bits.** No se pliega. Un `int` es un entero con signo de 32 bits, así que el resultado de
+  `print(2147483647 + 1);` no es representable. Queda igual después de optimizar y la máquina lo reporta al
+  ejecutarse (`el resultado no cabe en un entero de 32 bits`), igual que sin optimizar.
+- **División entera.** Se calcula truncando hacia cero, igual que la máquina de pila, y no con `//` de Python, que
+  redondea hacia abajo. `print(-7 / 2); print(-7 % 2);` se pliega a `print -3` y `print -1`, los mismos valores que
+  imprime sin optimizar (con `//` saldría `-4`).
+
+**Propagación de copias.** Después de `b = a`, las dos variables valen lo mismo hasta que una cambie. El optimizador
+recuerda esa igualdad dentro del bloque y sustituye cada lectura posterior por el valor que se sabe que tiene. Con
+`int a = 3; int b = a; a = 10; print(b); print(a);`:
+
+```
+IR                          IR optimizado
+@main:                      @main:
+    a = 3                       a = 3
+    b = a                       b = 3
+    a = 10                      a = 10
+    print b                     print 3
+    print a                     print 10
+    return                      return
+```
+
+`b = a` queda como `b = 3` porque se sabe que `a` vale 3, y `print b` como `print 3`. La instrucción `a = 10` cambia
+`a`, así que el optimizador olvida lo que sabía de ella y `print a` pasa a `print 10`.
+
+La propagación no cambia lo que imprime el programa porque solo usa una igualdad mientras sigue siendo cierta. Una
+copia deja de valer en cuanto cambia cualquiera de sus dos lados: si cambia `a`, ya no se sabe qué vale `a` ni se
+sigue pensando que `b` es igual a ella. Si el optimizador se quedara con la idea de que `b` es `a`, el programa de
+arriba imprimiría `10` en lugar de `3`. Lo mismo ocurre dentro de un `while`: en
+`while (n < 3) { int x = n; n = n + 1; print(x); }`, la variable `x` debe conservar el valor que `n` tenía al copiarlo,
+aunque `n` cambie después. Y como se olvida todo al llegar a una etiqueta, un salto o una llamada, nunca se usa una
+igualdad que otro camino del programa pueda haber roto.
+
+**Eliminación de temporales muertos.** Una instrucción que solo calcula un temporal (`@t1`, `@t2`, …) que ninguna
+otra instrucción lee no sirve para nada, y se borra. Con `int a = 2 + 3; print(a);`:
+
+```
+IR                          IR optimizado
+@main:                      @main:
+    @t1 = 2 + 3                 a = 5
+    a = @t1                     print 5
+    print a                     return
+    return
+```
+
+Primero el plegado deja `@t1 = 5` y la propagación cambia `a = @t1` por `a = 5` y `print a` por `print 5`. Desde ese
+momento nadie lee `@t1` y la segunda pasada lo borra. Borrar una instrucción puede dejar sin uso a la que calculaba
+su operando, por eso la pasada se repite hasta que no cambia nada.
+
+Esta optimización no cambia el resultado porque borra solo lo que no se puede notar. Tiene tres límites:
+
+- **Solo temporales.** Las variables del programa nunca se borran, aunque no se vuelvan a leer, porque pueden leerse
+  desde una función o desde otro punto del programa que el optimizador no sigue. Los temporales los crea el
+  compilador y solo las instrucciones del IR los leen. Además, para decidir si un temporal se lee se revisa toda la lista, no solo
+  su bloque: un uso después de una etiqueta también cuenta.
+- **Solo instrucciones sin efectos.** Se borran las operaciones aritméticas, de comparación, lógicas, unarias y las
+  copias. Nunca se borra un `print`, un salto, una llamada (aunque no se use su resultado, la función puede imprimir
+  o cambiar variables globales) ni un `return`.
+- **Una división puede fallar.** `@t1 = a / b` se conserva aunque nadie lea `@t1`, porque si `b` vale 0 el programa
+  debe terminar con el error de ejecución. Solo se borra una división o un módulo cuando el divisor es una
+  constante distinta de cero, ya que entonces no puede fallar.
+
+**Ejemplo completo.** `examples/optimizacion.src` junta las tres optimizaciones en un programa con un `while`, un
+`if/else` y expresiones constantes. Se ve con `python -m src.main examples/optimizacion.src --ir --ir-opt`.
+
+```
+int i = 0;
+int suma = 0;
+int limite = 2 + 3;
+while (i < limite) {
+    suma = suma + i * 2;
+    i = i + 1;
+}
+if (suma > 10) {
+    print(suma);
+} else {
+    print(0);
+}
+print(4 * 5 - 6 / 2);
+```
+
+IR sin optimizar (27 instrucciones):
+
+```
+@main:
+    i = 0
+    suma = 0
+    @t1 = 2 + 3
+    limite = @t1
+@L1:
+    @t2 = i < limite
+    if_false @t2 goto @L2
+    @t3 = i * 2
+    @t4 = suma + @t3
+    suma = @t4
+    @t5 = i + 1
+    i = @t5
+    goto @L1
+@L2:
+    @t6 = suma > 10
+    if_false @t6 goto @L3
+    print suma
+    goto @L4
+@L3:
+    print 0
+@L4:
+    @t7 = 4 * 5
+    @t8 = 6 / 2
+    @t9 = @t7 - @t8
+    print @t9
+    return
+```
+
+IR optimizado (23 instrucciones):
+
+```
+@main:
+    i = 0
+    suma = 0
+    limite = 5
+@L1:
+    @t2 = i < limite
+    if_false @t2 goto @L2
+    @t3 = i * 2
+    @t4 = suma + @t3
+    suma = @t4
+    @t5 = i + 1
+    i = @t5
+    goto @L1
+@L2:
+    @t6 = suma > 10
+    if_false @t6 goto @L3
+    print suma
+    goto @L4
+@L3:
+    print 0
+@L4:
+    print 17
+    return
+```
+
+Cambian cuatro instrucciones, las de los temporales `@t1`, `@t7`, `@t8` y `@t9`:
+
+- `@t1 = 2 + 3` se pliega a `@t1 = 5`, la propagación convierte `limite = @t1` en `limite = 5` y `@t1` queda sin uso.
+- `@t7 = 4 * 5` y `@t8 = 6 / 2` se pliegan a `20` y `3`; la propagación convierte `@t9 = @t7 - @t8` en `@t9 = 20 - 3`,
+  que se pliega a `17`, y `print @t9` pasa a `print 17`. Los tres temporales quedan sin uso y se borran.
+
+El ciclo y la condición del `if` no cambian, y es correcto que así sea. Al llegar a `@L1` el optimizador olvida todo lo
+aprendido, porque a esa etiqueta se vuelve desde el final del ciclo con `i` y `suma` cambiados. Por eso `i < limite`
+sigue comparando con la variable `limite` y no con el `5` que se había visto antes del ciclo. Las etiquetas y los saltos
+quedan exactamente iguales (`tests/ir/test_criterio.py` lo comprueba).
+
+Los dos listados imprimen lo mismo: `20` y `17`. El `20` es la suma de `i * 2` para `i` de 0 a 4, y el `17` es
+`4 * 5 - 6 / 2`.
+
 ## 6. Máquina de pila (Zareth)
 
 El código objetivo es una lista de líneas de texto, una instrucción por línea. La máquina tiene una **pila de

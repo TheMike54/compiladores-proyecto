@@ -1,0 +1,13 @@
+int i = 0;
+int suma = 0;
+int limite = 2 + 3;
+while (i < limite) {
+    suma = suma + i * 2;
+    i = i + 1;
+}
+if (suma > 10) {
+    print(suma);
+} else {
+    print(0);
+}
+print(4 * 5 - 6 / 2);
