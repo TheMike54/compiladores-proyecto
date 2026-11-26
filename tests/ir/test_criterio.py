@@ -141,6 +141,31 @@ class CriterioDeAceptacion(unittest.TestCase):
         self.assertEqual(ejecutar(optimizado), ["20", "17"])
 
 
+class EjemploOptimizacion(unittest.TestCase):
+    """`examples/optimizacion.src`: el programa donde la optimización se nota."""
+
+    def setUp(self):
+        fuente = (EJEMPLOS / "optimizacion.src").read_text(encoding="utf-8")
+        self.sin_optimizar, self.optimizado = compilar(fuente)
+
+    def test_el_ejemplo_es_el_programa_del_criterio(self):
+        fuente = (EJEMPLOS / "optimizacion.src").read_text(encoding="utf-8")
+        self.assertEqual(fuente.strip(), PROGRAMA_DEL_CRITERIO.strip())
+
+    def test_la_optimizacion_reduce_las_instrucciones(self):
+        self.assertEqual(len(self.sin_optimizar), 27)
+        self.assertEqual(len(self.optimizado), 23)
+
+    def test_las_expresiones_constantes_quedan_calculadas(self):
+        texto = listado(self.optimizado)
+        self.assertIn("    limite = 5", texto)
+        self.assertIn("    print 17", texto)
+
+    def test_imprime_lo_mismo_antes_y_despues(self):
+        self.assertEqual(ejecutar(self.sin_optimizar), ["20", "17"])
+        self.assertEqual(ejecutar(self.optimizado), ["20", "17"])
+
+
 class MismaSalidaConElOptimizador(unittest.TestCase):
     def comprobar(self, fuente: str, esperado: list[str]) -> None:
         sin_optimizar, optimizado = compilar(fuente)
