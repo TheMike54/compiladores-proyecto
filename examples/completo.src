@@ -1,5 +1,5 @@
 /* Usa todas las construcciones del lenguaje.
-   Salida esperada: 1 0 1 1 2 3 5 8 13 21 34, luego 55, true y 3 */
+   Salida esperada: 0 1 1 2 3 5 8 13 21 34 55, luego 55, true y 3 */
 
 func fibonacci(int n): int {
     if (n < 2) {

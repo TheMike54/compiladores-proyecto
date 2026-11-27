@@ -1,0 +1,3 @@
+Error léxico [línea 2, columna 11]: carácter no válido '@'
+Error léxico [línea 3, columna 15]: se esperaba '&&' y se encontró '&' solo
+Error léxico [línea 4, columna 9]: entero con cero inicial: '007'

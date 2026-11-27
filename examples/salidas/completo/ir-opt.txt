@@ -1,0 +1,61 @@
+func fibonacci(n)
+    @t1 = n < 2
+    if_false @t1 goto @L1
+    return n
+@L1:
+    @t2 = n - 1
+    param @t2
+    @t3 = call fibonacci, 1
+    @t4 = n - 2
+    param @t4
+    @t5 = call fibonacci, 1
+    @t6 = @t3 + @t5
+    return @t6
+endfunc fibonacci
+func es_par(x)
+    @t7 = x % 2
+    @t8 = @t7 == 0
+    return @t8
+endfunc es_par
+func mostrar_serie(limite)
+    i = 0
+@L2:
+    @t9 = i < limite
+    if_false @t9 goto @L3
+    param i
+    @t10 = call fibonacci, 1
+    print @t10
+    @t11 = i + 1
+    i = @t11
+    goto @L2
+@L3:
+    return
+endfunc mostrar_serie
+@main:
+    param 11
+    call mostrar_serie, 1
+    param 10
+    @t12 = call fibonacci, 1
+    total = @t12
+    param @t12
+    @t13 = call es_par, 1
+    par = @t13
+    print total
+    @t14 = !@t13
+    @t15 = total > 50
+    @t16 = @t14 && @t15
+    @t17 = @t16 || false
+    if_false @t17 goto @L4
+    print true
+    goto @L5
+@L4:
+    if_false par goto @L6
+    print false
+    goto @L7
+@L6:
+    print 0
+@L7:
+@L5:
+    resta = 3
+    print 3
+    return

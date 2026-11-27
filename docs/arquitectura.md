@@ -31,13 +31,14 @@ Front-end: lexer, parser, semántico. Middle-end: IR y optimizador. Back-end: ge
 | Semántico | `Programa` | `Programa` con `tipo` en cada expresión, `TablaSimbolos`, errores | `src.semantic.analizar(programa)` | Iván |
 | IR | `Programa` anotado | `list[Instruccion]` | `src.ir.generar(programa)` | Aldo |
 | Optimizador | `list[Instruccion]` | `list[Instruccion]` | `src.optimizer.optimizar(instrucciones)` | Aldo |
-| Generador | `list[Instruccion]` | `list[str]` (código de pila) | `src.backend.generar(instrucciones)` | Zareth |
-| Máquina | `list[str]` | salida impresa, errores | `src.backend.ejecutar(codigo)` | Zareth |
+| Generador | `list[Instruccion]` | `list[str]` (código de pila) | `src.backend.generador.generar(instrucciones)` | Zareth |
+| Máquina | `list[str]` | salida impresa, error | `src.backend.maquina.ejecutar(codigo)` | Zareth |
 
 Reglas comunes:
 - Todos los errores son `src.errores.ErrorCompilacion(fase, mensaje, linea, columna)`. Ninguna fase lanza excepciones
   por un error del programa: los junta en una lista y sigue.
-- Cada fase devuelve una tupla `(resultado, errores)` si puede fallar (léxico, sintáctico, semántico, máquina).
+- Las fases de análisis devuelven una tupla `(resultado, errores)` (léxico, sintáctico, semántico). La máquina
+  devuelve el primer error de ejecución o `None`, porque la ejecución se detiene en el primero.
 - `src/main.py` corre las fases en orden y se detiene después de la primera que tenga errores.
 - Ninguna fase modifica la entrada de otra salvo el semántico, que solo llena el campo `tipo` de las expresiones
   y el campo `nombre_unico` (sección 4).
@@ -445,6 +446,13 @@ de pila sin esa información, la línea y la columna se muestran como `0`.
 python -m src.main <archivo.src> [--tokens] [--ast] [--simbolos] [--ir] [--ir-opt] [--objetivo] [--todo]
 ```
 
-Sin opciones, compila y ejecuta. Cada opción imprime el artefacto de su fase antes de seguir. Código de salida: `0` si
-todo salió bien, `1` si hubo errores del programa, `2` si no se pudo leer el archivo. Hoy existen `--tokens` y
-`--ast`; las demás las agrega Zareth conforme se integran las fases.
+Sin opciones, compila y ejecuta. Cada opción imprime el artefacto de su fase antes de seguir, con un encabezado
+(`== TOKENS ==`, `== AST ==`, `== TABLA DE SÍMBOLOS ==`, `== IR ==`, `== IR OPTIMIZADO ==`, `== CÓDIGO OBJETIVO ==`);
+`--todo` las imprime todas. El código de pila se guarda en `build/<nombre>.pila` (carpeta relativa a donde se corre el
+comando) y se ejecuta; la salida del programa va después de los artefactos.
+
+Si una fase encuentra errores, el comando los imprime en la salida de errores, en orden, y no corre las fases
+siguientes. Si se pidieron, los artefactos de las fases anteriores y el de la fase que falló se imprimen igual.
+
+Código de salida: `0` si todo salió bien, `1` si hubo errores del programa (de compilación o de ejecución), `2` si no
+se pudo leer el archivo.

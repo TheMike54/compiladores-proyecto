@@ -37,7 +37,7 @@ Cada llamada crea un marco con su propia pila, sus variables locales y la direcc
 
 El repertorio incluye `PUSH`, `LOAD` y `STORE` para mover valores, `ADD`, `SUB`, `MUL`, `DIV`, `MOD` y `NEG` para aritmética, `EQ`, `NE`, `LT`, `LE`, `GT` y `GE` para comparaciones, y `AND`, `OR` y `NOT` para lógica. El flujo se controla con `LABEL`, `JMP`, `JZ`, `FUNC`, `CALL` y `RET`. `PRINT` muestra el valor de la cima y lo retira. `HALT` termina el programa.
 
-El simulador reporta división o módulo entre cero, resultados fuera del rango de enteros con signo de 32 bits, lectura de variables sin valor y exceso de llamadas al superar los 1000 marcos de función. Si hay un error, el comando informa el motivo y devuelve código de salida 1.
+El simulador reporta división o módulo entre cero, resultados fuera del rango de enteros con signo de 32 bits, lectura de variables sin valor y exceso de llamadas al superar los 1000 marcos de función. Si hay un error, el comando informa el motivo con la línea y la columna de la sentencia del programa fuente que falló (por ejemplo, `Error de ejecución [línea 2, columna 1]: división entre cero`) y devuelve código de salida 1.
 
 ## 3. Reproducción
 
