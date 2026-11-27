@@ -1,0 +1,6 @@
+Ámbito global (nivel 0)
+  nombre     categoría  tipo  línea  nombre único  parámetros
+  n          variable   int   2      n
+  resultado  variable   int   3      resultado
+    Ámbito bloque (línea 4) (nivel 1)
+      (sin símbolos)

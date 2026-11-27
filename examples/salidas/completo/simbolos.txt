@@ -1,0 +1,30 @@
+Ámbito global (nivel 0)
+  nombre         categoría  tipo     línea  nombre único  parámetros
+  fibonacci      funcion    int      4                    (int)
+  es_par         funcion    bool     11                   (int)
+  mostrar_serie  funcion    ninguno  15                   (int)
+  total          variable   int      25     total
+  par            variable   bool     26     par
+    Ámbito función fibonacci (nivel 1)
+      nombre  categoría  tipo  línea  nombre único  parámetros
+      n       parametro  int   4      n
+        Ámbito bloque (línea 5) (nivel 2)
+          (sin símbolos)
+    Ámbito función es_par (nivel 1)
+      nombre  categoría  tipo  línea  nombre único  parámetros
+      x       parametro  int   11     x
+    Ámbito función mostrar_serie (nivel 1)
+      nombre  categoría  tipo  línea  nombre único  parámetros
+      limite  parametro  int   15     limite
+      i       variable   int   16     i
+        Ámbito bloque (línea 17) (nivel 2)
+          (sin símbolos)
+    Ámbito bloque (línea 29) (nivel 1)
+      (sin símbolos)
+    Ámbito bloque (línea 31) (nivel 1)
+      (sin símbolos)
+    Ámbito bloque (línea 33) (nivel 1)
+      (sin símbolos)
+    Ámbito bloque (línea 37) (nivel 1)
+      nombre  categoría  tipo  línea  nombre único  parámetros
+      resta   variable   int   38     resta

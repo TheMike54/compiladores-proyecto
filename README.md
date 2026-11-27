@@ -69,8 +69,43 @@ Un error que ocurre al ejecutar el programa, como una división entre cero,
 se muestra con el prefijo `Error de ejecución` y la ubicación de la sentencia
 en el archivo fuente.
 
+## Artefactos de ejemplo
+
+`examples/salidas/` guarda lo que produce cada fase para tres programas válidos (`factorial`, `completo` y
+`optimizacion`): tokens, AST, tabla de símbolos, IR, IR optimizado, código objetivo (`objetivo.pila`) y la salida del
+programa. Para los tres ejemplos con errores guarda los mensajes (`errores.txt`). Una prueba comprueba que estos
+archivos siguen iguales a lo que imprime el compilador; después de un cambio intencional se regeneran con:
+
+```powershell
+python -m tests.end_to_end.test_salidas
+```
+
 ## Pruebas
 
-```
+```powershell
 python -m unittest discover -s tests -t . -v
 ```
+
+Hay pruebas por fase en `tests/lexical/`, `tests/syntax/`, `tests/semantic/` e `tests/ir/`, y pruebas del comando
+completo y de la máquina de pila en `tests/end_to_end/`.
+
+## Documentación
+
+- `docs/especificacion-lenguaje.md`: tokens, tipos, operadores, sentencias y reglas de alcance de MiniLang.
+- `docs/gramatica.md`: gramática final, transformaciones, método de parsing y recuperación de errores.
+- `docs/arquitectura.md`: diagrama de fases y contrato entre ellas (AST, tabla de símbolos, IR, optimizador y
+  máquina de pila).
+- `docs/documento/`: secciones del documento técnico entregado en PDF.
+
+## Uso de IA
+
+El equipo usó asistentes de IA y declara para qué:
+
+- Claude Code (Anthropic): análisis léxico y sintáctico, AST, especificación, gramática y contrato entre fases; apoyo
+  en el análisis semántico (revisión de la lógica y de las pruebas); generador de código intermedio, optimizador y sus
+  pruebas; redacción y revisión de la documentación.
+- Codex (OpenAI): generador de código objetivo, máquina de pila, comando único y sus pruebas, y la sección del
+  documento sobre el backend.
+
+Cada integrante revisó, probó y puede explicar la parte que entregó. El detalle está en la sección «Uso de IA» de cada
+parte del documento técnico.

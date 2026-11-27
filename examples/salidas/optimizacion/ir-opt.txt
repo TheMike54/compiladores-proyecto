@@ -1,0 +1,23 @@
+@main:
+    i = 0
+    suma = 0
+    limite = 5
+@L1:
+    @t2 = i < limite
+    if_false @t2 goto @L2
+    @t3 = i * 2
+    @t4 = suma + @t3
+    suma = @t4
+    @t5 = i + 1
+    i = @t5
+    goto @L1
+@L2:
+    @t6 = suma > 10
+    if_false @t6 goto @L3
+    print suma
+    goto @L4
+@L3:
+    print 0
+@L4:
+    print 17
+    return

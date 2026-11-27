@@ -1,0 +1,14 @@
+@main:
+    n = 5
+    resultado = 1
+@L1:
+    @t1 = n > 1
+    if_false @t1 goto @L2
+    @t2 = resultado * n
+    resultado = @t2
+    @t3 = n - 1
+    n = @t3
+    goto @L1
+@L2:
+    print resultado
+    return
