@@ -8,6 +8,7 @@ from src.ast import arbol_texto
 from src.backend.generador import generar as generar_objetivo
 from src.backend.generador import guardar
 from src.backend.maquina import ejecutar_archivo
+from src.errores import Ubicacion
 from src.ir import generar as generar_ir
 from src.ir import listado
 from src.lexer import tokenizar
@@ -68,7 +69,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.ir_opt or args.todo:
         _seccion("IR OPTIMIZADO", listado(instrucciones_optimizadas))
 
-    codigo_objetivo = generar_objetivo(instrucciones_optimizadas)
+    ubicaciones: list[Ubicacion] = []
+    codigo_objetivo = generar_objetivo(instrucciones_optimizadas, ubicaciones=ubicaciones)
     if args.objetivo or args.todo:
         _seccion("CÓDIGO OBJETIVO", "\n".join(codigo_objetivo))
 
@@ -81,7 +83,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     try:
-        error = ejecutar_archivo(destino)
+        error = ejecutar_archivo(destino, ubicaciones=ubicaciones)
     except (OSError, UnicodeError) as error:
         print(f"No se pudo leer {destino}: {error}", file=sys.stderr)
         return 1

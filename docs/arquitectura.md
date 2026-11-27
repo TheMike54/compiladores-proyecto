@@ -428,11 +428,16 @@ operandos**, una **pila de marcos** (cada llamada crea un marco con sus variable
 | `HALT` | termina |
 
 La ejecución empieza en `LABEL @main`. Errores en tiempo de ejecución (fase `"ejecución"`): división o módulo entre
-cero, desbordamiento de la pila de llamadas (más de 1000 marcos) y `LOAD` de una variable que todavía no tiene valor
-(`la variable 'g' se usó antes de tener valor`). Este último pasa cuando una función lee una variable global cuya
-declaración aún no se ejecuta: en `int a = f(); int g = 5;`, con `f` regresando `g`, el semántico acepta el programa
-porque `g` está declarada antes de `f` en el texto, pero al llamar a `f` todavía no tiene valor. La línea y columna de estos errores son las de la
-instrucción del programa fuente si se conocen; si no, `0`.
+cero, desbordamiento de la pila de llamadas (más de 1000 marcos), resultado fuera del rango de un entero con signo
+de 32 bits y `LOAD` de una variable que todavía no tiene valor (`la variable 'g' se usó antes de tener valor`).
+Este último caso ocurre cuando una función lee una variable global cuya declaración aún no se ejecuta.
+Por ejemplo, en `int a = f(); int g = 5;`, con `f` regresando `g`, el semántico acepta el programa porque
+`g` está declarada antes de `f` en el texto, pero al llamar a `f` todavía no tiene valor.
+
+El comando único informa `Error de ejecución` con la línea y columna donde empieza la sentencia
+del programa fuente. El generador conserva esas posiciones hasta la ejecución mediante una lista en
+memoria que relaciona cada línea de código de pila con su origen. Al ejecutar directamente un archivo
+de pila sin esa información, la línea y la columna se muestran como `0`.
 
 ## 7. Comando único
 
