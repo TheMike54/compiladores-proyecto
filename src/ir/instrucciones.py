@@ -8,7 +8,9 @@ Las etiquetas son `str` (`@L1`, `@L2`, ..., y `@main`) y viven en el campo `etiq
 empiezan con `@` para no chocar con los del programa.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from src.errores import Ubicacion
 
 Operando = str | int | bool
 
@@ -51,6 +53,8 @@ class Instruccion:
     arg2: Operando | None = None
     etiqueta: str | None = None
     params: tuple[str, ...] = ()
+    # Metadato de diagnóstico. No forma parte del listado ni de la operación.
+    ubicacion: Ubicacion = field(default=(0, 0), kw_only=True, compare=False, repr=False)
 
     def __str__(self) -> str:
         a1, a2 = _texto(self.arg1), _texto(self.arg2)

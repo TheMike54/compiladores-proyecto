@@ -51,6 +51,24 @@ Puedes ver etapas individuales con `--tokens`, `--ast`, `--simbolos`, `--ir`,
 `1` si falla una fase y `2` si el archivo fuente no se puede leer.
 
 
+## Ejemplo con errores
+
+```powershell
+python -m src.main examples/error_semantico.src
+```
+
+El comando identifica, entre otros, una variable sin declarar. La salida completa es:
+
+```text
+Error semántico [línea 5, columna 1]: la variable 'contador' no está declarada
+Error semántico [línea 6, columna 15]: el operador '+' necesita int y int, y recibió int y bool
+Error semántico [línea 7, columna 5]: la condición del 'if' debe ser bool y es int
+```
+
+Un error que ocurre al ejecutar el programa, como una división entre cero,
+se muestra con el prefijo `Error de ejecución` y la ubicación de la sentencia
+en el archivo fuente.
+
 ## Pruebas
 
 ```

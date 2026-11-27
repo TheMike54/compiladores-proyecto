@@ -80,7 +80,7 @@ def _plegar(instruccion: Instruccion) -> Instruccion:
         return instruccion
     if not _cabe_en_int(resultado):
         return instruccion  # fuera de 32 bits: se deja para la ejecución
-    return Instruccion("copy", destino=instruccion.destino, arg1=resultado)
+    return replace(instruccion, op="copy", arg1=resultado, arg2=None)
 
 
 def _olvidar(copias: dict[str, Operando], variable: str) -> None:

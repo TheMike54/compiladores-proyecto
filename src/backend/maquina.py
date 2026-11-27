@@ -3,11 +3,11 @@
 import argparse
 import operator
 import sys
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from src.errores import ErrorCompilacion
+from src.errores import ErrorCompilacion, Ubicacion
 
 Valor = int | bool
 _MAXIMO_DE_LLAMADAS = 1000
@@ -71,15 +71,22 @@ def _apilar_resultado(pila: list[Valor], resultado: Valor) -> None:
 
 
 def ejecutar(
-    codigo: Iterable[str], mostrar: Callable[[str], None] = print
+    codigo: Iterable[str],
+    mostrar: Callable[[str], None] = print,
+    *,
+    ubicaciones: Sequence[Ubicacion] = (),
 ) -> ErrorCompilacion | None:
     """Ejecuta las líneas. Devuelve el primer error, si lo hay."""
-    instrucciones = [linea.split() for linea in codigo if linea.strip()]
+    instrucciones = [
+        (indice, linea.split())
+        for indice, linea in enumerate(codigo)
+        if linea.strip()
+    ]
     etiquetas: dict[str, int] = {}
     funciones: dict[str, tuple[int, list[str]]] = {}
 
     # Se registran los destinos antes de ejecutar para permitir saltos hacia adelante.
-    for posicion, instruccion in enumerate(instrucciones):
+    for posicion, (_, instruccion) in enumerate(instrucciones):
         match instruccion:
             case ["LABEL", nombre]:
                 etiquetas[nombre] = posicion + 1
@@ -93,11 +100,12 @@ def ejecutar(
 
     siguiente = etiquetas["@main"]
     instruccion = []
+    indice_archivo = None
     try:
         while siguiente < len(instrucciones):
             marco = marcos[-1]
             pila = marco.pila
-            instruccion = instrucciones[siguiente]
+            indice_archivo, instruccion = instrucciones[siguiente]
             siguiente += 1
 
             match instruccion:
@@ -185,14 +193,18 @@ def ejecutar(
     else:
         mensaje = "el programa terminó sin HALT"
 
-    # El archivo de pila todavía carece de posiciones del programa fuente.
-    return ErrorCompilacion("ejecución", mensaje, 0, 0)
+    linea, columna = 0, 0
+    if indice_archivo is not None and indice_archivo < len(ubicaciones):
+        linea, columna = ubicaciones[indice_archivo]
+    return ErrorCompilacion("ejecución", mensaje, linea, columna)
 
 
-def ejecutar_archivo(archivo: Path) -> ErrorCompilacion | None:
+def ejecutar_archivo(
+    archivo: Path, *, ubicaciones: Sequence[Ubicacion] = ()
+) -> ErrorCompilacion | None:
     """Lee las instrucciones guardadas y las ejecuta en orden."""
     codigo = archivo.read_text(encoding="utf-8-sig")
-    return ejecutar(codigo.splitlines())
+    return ejecutar(codigo.splitlines(), ubicaciones=ubicaciones)
 
 
 def main(argv: list[str] | None = None) -> int:

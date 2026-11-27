@@ -6,6 +6,8 @@ y sigue, para poder reportar varios errores en una sola corrida.
 
 from dataclasses import dataclass
 
+Ubicacion = tuple[int, int]
+
 
 @dataclass(frozen=True)
 class ErrorCompilacion:
@@ -15,4 +17,5 @@ class ErrorCompilacion:
     columna: int
 
     def __str__(self) -> str:
-        return f"Error {self.fase} [línea {self.linea}, columna {self.columna}]: {self.mensaje}"
+        fase = "de ejecución" if self.fase == "ejecución" else self.fase
+        return f"Error {fase} [línea {self.linea}, columna {self.columna}]: {self.mensaje}"

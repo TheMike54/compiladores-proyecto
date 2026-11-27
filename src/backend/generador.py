@@ -3,6 +3,8 @@
 from collections.abc import Iterable
 from pathlib import Path
 
+from src.errores import Ubicacion
+
 from src.ir.instrucciones import (
     OPERACIONES_BINARIAS,
     OPERACIONES_UNARIAS,
@@ -24,12 +26,15 @@ def _instruccion_para_apilar(operando: Operando) -> str:
     return f"PUSH {operando}"
 
 
-def generar(instrucciones: Iterable[Instruccion]) -> list[str]:
-    """Recibe instrucciones de IR y devuelve el código objetivo en orden."""
+def generar(
+    instrucciones: Iterable[Instruccion], *, ubicaciones: list[Ubicacion] | None = None
+) -> list[str]:
+    """Traduce el IR y, si se solicita, agrega una ubicación por línea emitida."""
     codigo_objetivo: list[str] = []
     dentro_de_funcion = False
 
     for instruccion in instrucciones:
+        inicio = len(codigo_objetivo)
         match instruccion.op:
             case operacion if operacion in _OPERACIONES_DE_DOS_OPERANDOS:
                 # Apila primero el operando izquierdo. El orden importa en SUB y DIV.
@@ -95,6 +100,10 @@ def generar(instrucciones: Iterable[Instruccion]) -> list[str]:
 
             case _:
                 raise ValueError(f"Operación de IR desconocida: {instruccion.op}")
+
+        if ubicaciones is not None:
+            lineas_emitidas = len(codigo_objetivo) - inicio
+            ubicaciones.extend([instruccion.ubicacion] * lineas_emitidas)
 
     return codigo_objetivo
 

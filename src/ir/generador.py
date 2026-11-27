@@ -5,7 +5,9 @@ cada sentencia agrega sus instrucciones a `codigo`. El formato está en docs/arq
 """
 
 from src.ast import Funcion, Programa
+from src.ast.nodos import Expresion, Nodo
 from src.ast.visitor import Visitor
+from src.errores import Ubicacion
 
 from .instrucciones import OPERACIONES_BINARIAS, OPERACIONES_UNARIAS, Instruccion, Operando
 
@@ -15,6 +17,19 @@ class GeneradorIR(Visitor):
         self.codigo: list[Instruccion] = []
         self._temporales = 0
         self._etiquetas = 0
+        self._ubicacion: Ubicacion = (0, 0)
+
+    def visitar(self, nodo: Nodo):
+        # Las expresiones heredan la ubicación de la sentencia que las evalúa.
+        if isinstance(nodo, Expresion):
+            return super().visitar(nodo)
+
+        ubicacion_anterior = self._ubicacion
+        self._ubicacion = (nodo.linea, nodo.columna)
+        try:
+            return super().visitar(nodo)
+        finally:
+            self._ubicacion = ubicacion_anterior
 
     # --- Utilidades ----------------------------------------------------------
 
@@ -27,7 +42,7 @@ class GeneradorIR(Visitor):
         return f"@L{self._etiquetas}"
 
     def emitir(self, op: str, **campos) -> None:
-        self.codigo.append(Instruccion(op, **campos))
+        self.codigo.append(Instruccion(op, ubicacion=self._ubicacion, **campos))
 
     # --- Expresiones: devuelven un operando -----------------------------------
 

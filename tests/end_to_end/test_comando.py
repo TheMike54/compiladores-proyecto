@@ -56,13 +56,27 @@ class ComandoDelCompilador(unittest.TestCase):
             self.assertIn("no_declarada", resultado.stderr)
             self.assertFalse(Path(directorio, "build").exists())
 
-    def test_error_de_ejecucion(self):
-        with tempfile.TemporaryDirectory() as directorio:
-            fuente = Path(directorio, "division.src")
-            fuente.write_text("print(1 / 0);", encoding="utf-8")
-            resultado = self.ejecutar(directorio, fuente)
-            self.assertEqual(resultado.returncode, 1)
-            self.assertIn("división entre cero", resultado.stderr)
+    def test_errores_de_ejecucion_incluyen_la_ubicacion_de_la_sentencia(self):
+        casos = [
+            ("int cero = 0;\n  print(7 / cero);", 2, 3, "división entre cero"),
+            ("int cero = 0;\nprint(\n    7 % cero\n);", 2, 1, "módulo entre cero"),
+            ("func f() {\n    f();\n}\nf();", 2, 5, "desbordamiento de la pila de llamadas"),
+            ("int a = f();\nint g = 5;\nfunc f(): int {\n    return g;\n}", 4, 5,
+             "la variable 'g' se usó antes de tener valor"),
+            ("int maximo = 2147483647;\nprint(maximo + 1);", 2, 1,
+             "el resultado no cabe en un entero de 32 bits"),
+        ]
+        for programa, linea, columna, mensaje in casos:
+            with self.subTest(mensaje=mensaje), tempfile.TemporaryDirectory() as directorio:
+                fuente = Path(directorio, "error.src")
+                fuente.write_text(programa, encoding="utf-8")
+                resultado = self.ejecutar(directorio, fuente)
+
+                self.assertEqual(resultado.returncode, 1)
+                self.assertEqual(
+                    resultado.stderr.splitlines(),
+                    [f"Error de ejecución [línea {linea}, columna {columna}]: {mensaje}"],
+                )
 
     def test_archivo_inexistente(self):
         with tempfile.TemporaryDirectory() as directorio:
